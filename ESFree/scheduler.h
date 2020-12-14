@@ -34,7 +34,7 @@
 #define schedSCHEDULING_POLICY_EDF 3 		/* Earliest deadline first */
 
 /* Configure scheduling policy by setting this define to the appropriate one. */
-#define schedSCHEDULING_POLICY schedSCHEDULING_POLICY_RMS
+#define schedSCHEDULING_POLICY schedSCHEDULING_POLICY_MANUAL
 
 /* If the scheduling policy is EDF, the implementation can be chosen between
  * naive implementation or efficient implementation.
