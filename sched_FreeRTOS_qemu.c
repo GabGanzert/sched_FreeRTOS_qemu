@@ -12,48 +12,137 @@
 #include "stm32f4_discovery.h"
 #include "scheduler.h"
 #include "diag/Trace.h"
+#include "semphr.h"
 
+void meu_delay(int ticks);
 
-TaskHandle_t xHandle1 = NULL, xHandle2 = NULL, xHandle3 = NULL;
+TaskHandle_t xHandle1 = NULL, xHandle2 = NULL, xHandle3 = NULL, xHandle4 = NULL;
 
-typedef struct{
-	Led_TypeDef led;
-	int job;
-}job_led;
+SemaphoreHandle_t xMutex1 = NULL, xMutex2 = NULL;
 
-job_led j_led3, j_led5, j_led6;
+void vTask1(void *pvParam){
 
-void vBlink(void *pvParam){
-  static int tick=0;
+	trace_printf("%s, inicio no tick:%d \n", pcTaskGetName(NULL), xTaskGetTickCount());
 
-  job_led *job_led_t=(job_led *) pvParam;
+	meu_delay(1);
 
-  trace_printf("%s, job:%d, tick:%d \n", pcTaskGetName(NULL), (*job_led_t).job++, tick++);
-  BSP_LED_Toggle((*job_led_t).led);
-} // vBlink
+	trace_printf("%s, tentativa de acesso ao Mt1 no tick:%d \n", pcTaskGetName(NULL), xTaskGetTickCount());
+	if(xSemaphoreTake(xMutex1, 0)==pdTRUE){
+		//entrando na seção crítica 1
+		trace_printf("%s, obteve o Mt1 no tick:%d \n", pcTaskGetName(NULL), xTaskGetTickCount());
+		meu_delay(1);
+		xSemaphoreGive(xMutex1);
+		trace_printf("%s, liberou o Mt1 no tick:%d \n", pcTaskGetName(NULL), xTaskGetTickCount());
+		//saindo na seção crítica 1
+	}
+	else{
+		trace_printf("%s, acesso ao Mt1 bloqueado no tick:%d \n", pcTaskGetName(NULL), xTaskGetTickCount());
+	}
 
+	trace_printf("%s, tentativa de acesso ao Mt2 no tick:%d \n", pcTaskGetName(NULL), xTaskGetTickCount());
+	if(xSemaphoreTake(xMutex2, 0)==pdTRUE){
+		//entrando na seção crítica 2
+		trace_printf("%s, obteve o Mt2 no tick:%d \n", pcTaskGetName(NULL), xTaskGetTickCount());
+		meu_delay(1);
+		xSemaphoreGive(xMutex2);
+		trace_printf("%s, liberou o Mt2 no tick:%d \n", pcTaskGetName(NULL), xTaskGetTickCount());
+		//saindo na seção crítica 2
+	}
+	else{
+		trace_printf("%s, acesso ao Mt2 bloqueado no tick:%d \n", pcTaskGetName(NULL), xTaskGetTickCount());
+	}
+
+	meu_delay(1);
+
+	trace_printf("%s, fim no tick:%d \n", pcTaskGetName(NULL), xTaskGetTickCount());
+
+}
+
+void vTask2(void *pvParam){
+
+	trace_printf("%s, inicio no tick:%d \n", pcTaskGetName(NULL), xTaskGetTickCount());
+
+	meu_delay(1);
+
+	trace_printf("%s, tentativa de acesso ao Mt2 no tick:%d \n", pcTaskGetName(NULL), xTaskGetTickCount());
+	if(xSemaphoreTake(xMutex2, 0)==pdTRUE){
+		//entrando na seção crítica
+		trace_printf("%s, obteve o Mt2 no tick:%d \n", pcTaskGetName(NULL), xTaskGetTickCount());
+		meu_delay(2);
+		xSemaphoreGive(xMutex2);
+		trace_printf("%s, liberou o Mt2 no tick:%d \n", pcTaskGetName(NULL), xTaskGetTickCount());
+		//saindo na seção crítica
+	}
+	else{
+		trace_printf("%s, acesso ao Mt2 bloqueado no tick:%d \n", pcTaskGetName(NULL), xTaskGetTickCount());
+	}
+
+	meu_delay(1);
+
+	trace_printf("%s, fim no tick:%d \n", pcTaskGetName(NULL), xTaskGetTickCount());
+
+}
+
+void vTask3(void *pvParam){
+
+	trace_printf("%s, inicio no tick:%d \n", pcTaskGetName(NULL), xTaskGetTickCount());
+
+	meu_delay(1);
+
+	trace_printf("%s, fim no tick:%d \n", pcTaskGetName(NULL), xTaskGetTickCount());
+
+}
+
+void vTask4(void *pvParam){
+
+	trace_printf("%s, inicio no tick:%d \n", pcTaskGetName(NULL), xTaskGetTickCount());
+
+	meu_delay(1);
+
+	trace_printf("%s, tentativa de acesso ao Mt1 no tick:%d \n", pcTaskGetName(NULL), xTaskGetTickCount());
+	if(xSemaphoreTake(xMutex1, 0)==pdTRUE){
+		//entrando na seção crítica
+		trace_printf("%s, obteve o Mt1 no tick:%d \n", pcTaskGetName(NULL), xTaskGetTickCount());
+		meu_delay(4);
+		xSemaphoreGive(xMutex1);
+		trace_printf("%s, liberou o Mt1 no tick:%d \n", pcTaskGetName(NULL), xTaskGetTickCount());
+		//saindo na seção crítica
+	}
+	else{
+			trace_printf("%s, acesso ao Mt1 bloqueado no tick:%d \n", pcTaskGetName(NULL), xTaskGetTickCount());
+	}
+
+	meu_delay(1);
+
+	trace_printf("%s, fim no tick:%d \n", pcTaskGetName(NULL), xTaskGetTickCount());
+
+}
+
+void vPrioInfo(void *pvParam){
+  trace_printf("Priorities:\n%s: %d\n", pcTaskGetName(xHandle1), uxTaskPriorityGet(xHandle1));
+  trace_printf("%s: %d\n", pcTaskGetName(xHandle2), uxTaskPriorityGet(xHandle2));
+  trace_printf("%s: %d\n\n", pcTaskGetName(xHandle3), uxTaskPriorityGet(xHandle3));
+} // vPrioInfo
 
 void main(void){
   __HAL_RCC_GPIOD_CLK_ENABLE();
-  BSP_LED_Init(LED3);
-  BSP_LED_Init(LED5);
-  BSP_LED_Init(LED6);
 
-  j_led3.led=LED3;
-  j_led3.job=1;
+  xMutex1 = xSemaphoreCreateMutex();
+  xMutex2 = xSemaphoreCreateMutex();
 
-  j_led5.led=LED5;
-  j_led5.job=1;
 
-  j_led6.led=LED6;
-  j_led6.job=1;
-
-  vSchedulerInit();
-
-  vSchedulerPeriodicTaskCreate(vBlink, "Task1", configMINIMAL_STACK_SIZE, &j_led3, 1, &xHandle1, pdMS_TO_TICKS(000), pdMS_TO_TICKS(250), pdMS_TO_TICKS(001), pdMS_TO_TICKS(250));
-  vSchedulerPeriodicTaskCreate(vBlink, "Task2", configMINIMAL_STACK_SIZE, &j_led5, 1, &xHandle2, pdMS_TO_TICKS(250), pdMS_TO_TICKS(250), pdMS_TO_TICKS(001), pdMS_TO_TICKS(250));
-  vSchedulerPeriodicTaskCreate(vBlink, "Task3", configMINIMAL_STACK_SIZE, &j_led6, 1, &xHandle3, pdMS_TO_TICKS(125), pdMS_TO_TICKS(500), pdMS_TO_TICKS(001), pdMS_TO_TICKS(500));
+  vSchedulerPeriodicTaskCreate(vTask1, "Task 1", configMINIMAL_STACK_SIZE, NULL, 4, &xHandle1, pdMS_TO_TICKS(16), pdMS_TO_TICKS(1000), pdMS_TO_TICKS(8), pdMS_TO_TICKS(1000));
+  vSchedulerPeriodicTaskCreate(vTask2, "Task 2", configMINIMAL_STACK_SIZE, NULL, 3, &xHandle2, pdMS_TO_TICKS(14), pdMS_TO_TICKS(1000), pdMS_TO_TICKS(11), pdMS_TO_TICKS(1000));
+  vSchedulerPeriodicTaskCreate(vTask3, "Task 3", configMINIMAL_STACK_SIZE, NULL, 2, &xHandle3, pdMS_TO_TICKS(14), pdMS_TO_TICKS(1000), pdMS_TO_TICKS(12), pdMS_TO_TICKS(1000));
+  vSchedulerPeriodicTaskCreate(vTask4, "Task 4", configMINIMAL_STACK_SIZE, NULL, 1, &xHandle4, pdMS_TO_TICKS(12), pdMS_TO_TICKS(1000), pdMS_TO_TICKS(15), pdMS_TO_TICKS(1000));
 
   vSchedulerStart();
   while(1);
+
 } // main
+
+void meu_delay(int ticks){
+	int delay=ticks*16000;
+	for(int i=0;i<delay;i++);
+}
+
