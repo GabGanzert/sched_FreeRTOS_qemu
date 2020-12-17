@@ -27,7 +27,7 @@ void vTask1(void *pvParam){
 	meu_delay(1);
 
 	trace_printf("%s, tentativa de acesso ao Mt1 no tick:%d \n", pcTaskGetName(NULL), xTaskGetTickCount());
-	if(xSemaphoreTake(xMutex1, 0)==pdTRUE){
+	if(xSemaphoreTake(xMutex1, 10000)==pdTRUE){
 		//entrando na seção crítica 1
 		trace_printf("%s, obteve o Mt1 no tick:%d \n", pcTaskGetName(NULL), xTaskGetTickCount());
 		meu_delay(1);
@@ -40,7 +40,7 @@ void vTask1(void *pvParam){
 	}
 
 	trace_printf("%s, tentativa de acesso ao Mt2 no tick:%d \n", pcTaskGetName(NULL), xTaskGetTickCount());
-	if(xSemaphoreTake(xMutex2, 0)==pdTRUE){
+	if(xSemaphoreTake(xMutex2, 10000)==pdTRUE){
 		//entrando na seção crítica 2
 		trace_printf("%s, obteve o Mt2 no tick:%d \n", pcTaskGetName(NULL), xTaskGetTickCount());
 		meu_delay(1);
@@ -65,7 +65,7 @@ void vTask2(void *pvParam){
 	meu_delay(1);
 
 	trace_printf("%s, tentativa de acesso ao Mt2 no tick:%d \n", pcTaskGetName(NULL), xTaskGetTickCount());
-	if(xSemaphoreTake(xMutex2, 0)==pdTRUE){
+	if(xSemaphoreTake(xMutex2, 10000)==pdTRUE){
 		//entrando na seção crítica
 		trace_printf("%s, obteve o Mt2 no tick:%d \n", pcTaskGetName(NULL), xTaskGetTickCount());
 		meu_delay(2);
@@ -100,7 +100,7 @@ void vTask4(void *pvParam){
 	meu_delay(1);
 
 	trace_printf("%s, tentativa de acesso ao Mt1 no tick:%d \n", pcTaskGetName(NULL), xTaskGetTickCount());
-	if(xSemaphoreTake(xMutex1, 0)==pdTRUE){
+	if(xSemaphoreTake(xMutex1, 10000)==pdTRUE){
 		//entrando na seção crítica
 		trace_printf("%s, obteve o Mt1 no tick:%d \n", pcTaskGetName(NULL), xTaskGetTickCount());
 		meu_delay(4);
